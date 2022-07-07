@@ -1,13 +1,12 @@
 ﻿
-using LibraryBotUtn.Bots;
+using LibraryBotUtn.Common.Cards;
 using LibraryBotUtn.Common.Models;
+using LibraryBotUtn.Common.Models.BotState;
+using LibraryBotUtn.RecursosBot;
 using LibraryBotUtn.Services.BotConfig;
-using LibraryBotUtn.Services.BotConfig.Repositories;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
-using Microsoft.BotBuilderSamples;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -18,17 +17,30 @@ using System.Threading.Tasks;
 
 namespace LibraryBotUtn.Dialogs
 {
-    public class LibraryBot<T> : BaseLibraryBot<T> where T : Dialog
+    public class LibraryBot<T> : ActivityHandler where T : Dialog
     {
         public const string WelcomeText = @"Para poder acceder al servcio debe eligir cual sera su modo de ingreso, para obtener mas informacion hacerca del modo de ingreso viste https://wwww.mododeingreso.com ";
         private readonly IDataservices _dataservices;
-        protected readonly BotState _botState;
-        public static string idBotuser = "userBot";
-        public LibraryBot(Microsoft.BotBuilderSamples.IStore store, ConversationState conversationState, UserState botState, T dialog, ILogger<BaseLibraryBot<T>> logger, IDataservices dataservices, UserState tokenBot)
-           : base(store, conversationState, botState, dialog, logger, dataservices)
+        protected readonly BotState _conversationState;
+        protected readonly BotState _userState;
+        protected readonly Dialog _dialog;
+        private readonly Microsoft.BotBuilderSamples.IStore _store;
+        public static string keyClient = "userClient";
+        private readonly IStatePropertyAccessor<AuthStateModel> _clientState;
+        public static string keyBot = "userBot";
+        public static BotVerificadoEntity _bot = new BotVerificadoEntity();
+        public readonly IStatePropertyAccessor<AuthStateModel> _botState;
+
+        public LibraryBot(ConversationState conversationState, UserState userState, UserState botState, UserState clientState, T dialog, IDataservices dataservices, Microsoft.BotBuilderSamples.IStore store)
+
         {
-            this._dataservices = dataservices;
-            this._botState = botState;
+            _conversationState = conversationState;
+            _clientState = clientState.CreateProperty<AuthStateModel>(keyClient);
+            _botState = botState.CreateProperty<AuthStateModel>(keyBot);
+            _userState = userState;
+            _dialog = dialog;
+            _dataservices = dataservices;
+            _store = store;
         }
 
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
@@ -37,19 +49,77 @@ namespace LibraryBotUtn.Dialogs
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
-                   
-                    await _dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);
+                    _bot = await _dataservices.AuthRepositori.Auth("bibliochatutn@outlook.com");
+                    if (_bot.token != null)
+                    {
+                        var botStateData = await _botState.GetAsync(turnContext, () => new AuthStateModel());
+                    }
+
+                    var fraceEntity = await _dataservices.FracesRepositori.Frace("Bienvenida", _bot.token);
+                    if (fraceEntity != null)
+                    {
+
+                        await OnBoarding.ToShow(fraceEntity.frace, turnContext, cancellationToken);
+                    }
+
+                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bienvenido"), cancellationToken);
+
+                   // await _dialog.RunAsync(turnContext, _conversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
                 }
             }
         }
 
-        //protected override async Task OnTokenResponseEventAsync(ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
-        //{
-        //    _logger.LogInformation("Running dialog with Token Response Event Activity.");
+      
 
-        //    // Run the Dialog with the new Token Response Event Activity.
-        //    await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
-        //}
+        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            await base.OnTurnAsync(turnContext, cancellationToken);
+            await _conversationState.SaveChangesAsync(turnContext, false, cancellationToken);
+            await _userState.SaveChangesAsync(turnContext, false, cancellationToken);
+
+        }
+        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        {
+
+            var key = $"{turnContext.Activity.ChannelId}/conversations/{turnContext.Activity.Conversation?.Id}";
+
+            var clientStateData = await _clientState.GetAsync(turnContext, () => new AuthStateModel());
+
+            if (clientStateData.IsAutenticate)
+            {
+
+                // The execution sits in a loop because there might be a retry if the save operation fails.
+                while (true)
+                {
+                    // Load any existing state associated with this key
+                    var (oldState, etag) = await _store.LoadAsync(key);
+
+                    // Run the dialog system with the old state and inbound activity, the result is a new state and outbound activities.
+                    var (activities, newState) = await DialogHost.RunAsync(_dialog, turnContext.Activity, oldState, cancellationToken);
+
+                    // Save the updated state associated with this key.
+                    var success = await _store.SaveAsync(key, newState, etag);
+
+                    // Following a successful save, send any outbound Activities, otherwise retry everything.
+                    if (success)
+                    {
+                        if (activities.Any())
+                        {
+                            // This is an actual send on the TurnContext we were given and so will actual do a send this time.
+                            //await turnContext.SendActivitiesAsync(activities, cancellationToken);
+
+                        }
+
+                        break;
+                    }
+                }
+            }
+            await _dialog.RunAsync(
+              turnContext,
+              _conversationState.CreateProperty<DialogState>(nameof(DialogState)),
+              cancellationToken
+            );
+        }
         private Attachment CreateAdaptiveCardAttachment()
         {
 

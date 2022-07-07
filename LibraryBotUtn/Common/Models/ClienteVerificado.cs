@@ -8,7 +8,7 @@ namespace LibraryBotUtn.Common.Models
 {
     public class ClienteVerificado
     {
-        public string newToken { get; set; }
+        public string token { get; set; }
         public ClienteEntity cliente { get; set; }
         public static ClienteVerificado fromJson(string json) => JsonConvert.DeserializeObject<ClienteVerificado>(json);
     }

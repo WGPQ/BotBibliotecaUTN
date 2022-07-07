@@ -23,7 +23,7 @@ namespace LibraryBotUtn.Services.BotConfig.Repositories
 
             var url = $"{baseUrl}/chat/crear";
 
-            var chat = new ChatEntity();
+            ChatEntity chat = new ChatEntity();
 
             using (var client = new HttpClient())
             {
@@ -37,9 +37,12 @@ namespace LibraryBotUtn.Services.BotConfig.Repositories
                 {
                     var apiResponse = resp.Content.ReadAsStringAsync().Result;
 
-                    ResultadoEntity result = JsonConvert.DeserializeObject<ResultadoEntity>(apiResponse);
 
-                    chat = ChatEntity.fromJson(result.data.ToString());
+                    ResultadoEntity result = JsonConvert.DeserializeObject<ResultadoEntity>(apiResponse);
+                    if (result.exito)
+                    {
+                        chat = ChatEntity.fromJson(result.data.ToString());
+                    }
 
                 }
             }

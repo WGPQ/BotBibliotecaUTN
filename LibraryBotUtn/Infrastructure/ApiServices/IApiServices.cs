@@ -17,22 +17,22 @@ namespace LibraryBotUtn.Services.BotConfig
     public interface IAutentication<R, U> where U : new()
     {
         Task<R> Auth(string email);
-        Task<U> GetUser(TokenEntity entity);
-        Task<R> NewUser(ClienteEntity cliente, string token);
+    
     }
-    public interface IAutenticationRepositori : IAutentication<ResultadoEntity, UsuarioEntity> { }
+    public interface IAutenticationRepositori : IAutentication<BotVerificadoEntity, BotEntity> { }
     public interface IChat<T> where T : new()
     {
         Task<T> Interaction(InteractionEntity interaction, string token);
     }
     public interface IChatRepositori : IChat<ChatEntity> { }
 
-    public interface ICliente<T, C> where T : new()
+    public interface ICliente<T, C,R> where T : new()
     {
-        Task<T> GetUser(TokenEntity entity);
         Task<C> Auth(string email);
+        Task<R> NewUser(ClienteEntity cliente, string token);
+
     }
-    public interface IClienteRepositori : ICliente<ClienteEntity, ClienteVerificado> { }
+    public interface IClienteRepositori : ICliente<ClienteEntity, ClienteVerificado, ResultadoEntity> { }
     public interface IStore
     {
         Task<(JObject content, string etag)> LoadAsync(string key);

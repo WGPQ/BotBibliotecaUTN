@@ -1,18 +1,13 @@
-﻿using LibraryBotUtn.Common.Models;
+﻿using LibraryBotUtn.Common.Cards;
+using LibraryBotUtn.Common.Models;
+using LibraryBotUtn.Common.Models.BotState;
 using LibraryBotUtn.Services.BotConfig;
+using LibraryBotUtn.Services.LuisAi;
 using Microsoft.Bot.Builder;
-using Microsoft.Bot.Builder.AI.QnA;
 using Microsoft.Bot.Builder.Dialogs;
-using Microsoft.Bot.Builder.Dialogs.Choices;
 using Microsoft.Bot.Schema;
-using Microsoft.BotBuilderSamples;
 using Microsoft.LibraryBotUtn.QnA;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,150 +16,50 @@ namespace LibraryBotUtn.Dialogs.Authenticate
     public class AuthUserDialog : ComponentDialog
 
     {
+        public readonly ILuisAIService _luisAIServices;
         private readonly IDataservices _dataservices;
         public readonly IQnAMakerServices _qnmakerService;
-
+       public static ClienteVerificado userData = new ClienteVerificado();
 
         private static string EMAIL_USER_PROMPT = "EMAIL_USER_PROMPT";
         private string WATER_fULL_STEP_REGISTER = "REGISTER_USER";
-        private string WATER_fULL_STEP_CONSULTA = "CONSULTA";
-        private string WATER_fULL_STEP_INITIAL = "WATER_fULL_STEP_INITIAL";
-        protected readonly BotState _botState;
+        private string WATER_fULL_STEP_AUTH = "WATER_fULL_STEP_AUTH";
+        public static string keyClient = "userClient";
+        private readonly IStatePropertyAccessor<AuthStateModel> _userState;
 
 
-        public AuthUserDialog(IDataservices dataservices, UserState botState, IQnAMakerServices qnmakerService):base(nameof(AuthUserDialog))
+
+        public AuthUserDialog(IDataservices dataservices, UserState userState, IQnAMakerServices qnmakerService, ILuisAIService luisAIServices) : base(nameof(AuthUserDialog))
         {
+            _luisAIServices = luisAIServices;
             _dataservices = dataservices;
-            _botState = botState;
+            _userState = userState.CreateProperty<AuthStateModel>(keyClient);
             _qnmakerService = qnmakerService;
 
-            // USER INTRODUCTION
-            var waterfullStepIntriduction = new WaterfallStep[]
-            {
-                RequestEmailUser,
-                ValidateUser,
-
-            };
-            AddDialog(new WaterfallDialog(WATER_fULL_STEP_INITIAL, waterfullStepIntriduction));
-            AddDialog(new TextPrompt("texto"));
-            AddDialog(new TextPrompt(EMAIL_USER_PROMPT, EmailValidator));
-            //REGISTER USER
-
-
+            //AddDialog(new MenuDialog(dataservices, qnmakerService,luisAIServices));
+            // USER AUTH
             var waterfullStepAuth = new WaterfallStep[]
-           {
-               SolicitarNombre,
-                VerificarRegistro
-           };
-            AddDialog(new WaterfallDialog(WATER_fULL_STEP_REGISTER, waterfullStepAuth));
-
-            var waterfullConsulta = new WaterfallStep[]
-       {
-               Preguntar,
-               Responder
-       };
-            AddDialog(new WaterfallDialog(WATER_fULL_STEP_CONSULTA, waterfullConsulta));
-
-
-
-
-
-
-        }
-
-        private async Task<DialogTurnResult> Responder(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var qnamakerResult = await _qnmakerService._qnamaker.GetAnswersAsync(stepContext.Context);
-
-            return await Intentions(stepContext, qnamakerResult, cancellationToken);
-        }
-
-        private async Task<DialogTurnResult> Intentions(WaterfallStepContext stepContext, QueryResult[] qnamakerResult, CancellationToken cancellationToken)
-        {
-            if (qnamakerResult.Any())
             {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text("Biblioteca: " + qnamakerResult.First().Answer), cancellationToken);
-                return await stepContext.BeginDialogAsync(WATER_fULL_STEP_CONSULTA, null, cancellationToken);
-            }
-            else
-            {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text("Lo siento no encontre una respuesta :("), cancellationToken);
-                return await stepContext.BeginDialogAsync(WATER_fULL_STEP_CONSULTA, null, cancellationToken);
+                SolicitarEmail,
+                ValidateUser,
+                SolicitarNombre,
+                RegistrarCliente,
+                FinalAuth
 
-
-            }
-        }
-
-        private async Task<DialogTurnResult> Preguntar(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var promptOptions = new PromptOptions
-            {
-                Prompt = MessageFactory.Text("Cual es su inquietud sobre la biblioteca", "soicitar pregunta", InputHints.ExpectingInput),
             };
-
-            return await stepContext.PromptAsync("texto", promptOptions, cancellationToken);
+            AddDialog(new WaterfallDialog(WATER_fULL_STEP_AUTH, waterfullStepAuth));
+            AddDialog(new TextPrompt(EMAIL_USER_PROMPT, EmailValidator));
+            AddDialog(new TextPrompt("texto"));
+          
+            InitialDialogId = WATER_fULL_STEP_AUTH;
         }
 
-
-        private async Task<DialogTurnResult> SolicitarNombre(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-
-            var promptOptions = new PromptOptions
-            {
-                Prompt = MessageFactory.Text("Ahora igrese su nombre", "soicitar nombre", InputHints.ExpectingInput),
-            };
-
-            return await stepContext.PromptAsync("texto", promptOptions, cancellationToken);
-
-        }
-
-        private async Task<DialogTurnResult> VerificarRegistro(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var message = "";
-            var userStateAccessors = _botState.CreateProperty<ClienteEntity>("userCliente");
-            var userProfile = await userStateAccessors.GetAsync(stepContext.Context, () => new ClienteEntity());
-
-            var userBotStateAccessors = _botState.CreateProperty<UsuarioEntity>("userBot");
-            var userbot = await userBotStateAccessors.GetAsync(stepContext.Context, () => new UsuarioEntity());
-
-            userProfile.nombre = stepContext.Context.Activity.Text?.Trim();
-
-            var tokenBotAccessors = _botState.CreateProperty<TokenEntity>(nameof(TokenEntity));
-            var tokenBot = await tokenBotAccessors.GetAsync(stepContext.Context, () => new TokenEntity());
-
-
-            var respuesta = await _dataservices.AuthRepositori.NewUser(userProfile, tokenBot.token);
-            if (respuesta.exito)
-            {
-                message = respuesta.message;
-                ClienteEntity cliente = ClienteEntity.fromJson(respuesta.data.ToString());
-                var resultado = await _dataservices.ClienteRepositori.Auth(cliente.correo);
-
-                TokenEntity tokenResult = new TokenEntity();
-                     if (resultado!=null)
-                {
-                    tokenResult.token = resultado.newToken;
-                    cliente = resultado.cliente;
-                    var interaction = new InteractionEntity
-                    {
-                        usuario_created = userbot.id,
-                        usuario_interacted = cliente.Id
-                    };
-                    ChatEntity chat = await _dataservices.ChatRepositori.Interaction(interaction, tokenBot.token);
-
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Ok {cliente.nombre} Empecemos!! chat {chat.chat}"), cancellationToken);
-                }
-            }
-           return await stepContext.BeginDialogAsync(WATER_fULL_STEP_CONSULTA, null, cancellationToken);
-            //return await stepContext.PromptAsync("texto", new PromptOptions { Prompt = MessageFactory.Text(userProfile.correo) }, cancellationToken);
-        }
-
-        private async Task<DialogTurnResult> RequestEmailUser(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        private async Task<DialogTurnResult> SolicitarEmail(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var promptOptions = new PromptOptions
             {
-                Prompt = MessageFactory.Text("Para poder iteractuar en el chat debe ingresar su correo", "soicitar correo", InputHints.ExpectingInput),
-                RetryPrompt = MessageFactory.Text("Ingrese un correo valido"),
+                Prompt = MessageFactory.Text("Por favor ingresa tu correo electrónico", "soicitar correo", InputHints.ExpectingInput),
+                RetryPrompt = MessageFactory.Text("Debe ingresar un correo valido"),
             };
 
             return await stepContext.PromptAsync(EMAIL_USER_PROMPT, promptOptions, cancellationToken);
@@ -173,39 +68,91 @@ namespace LibraryBotUtn.Dialogs.Authenticate
 
         private async Task<DialogTurnResult> ValidateUser(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            var correo = stepContext.Context.Activity.Text?.Trim();
-            var userStateAccessors = _botState.CreateProperty<ClienteEntity>("userCliente");
-            var userProfile = await userStateAccessors.GetAsync(stepContext.Context, () => new ClienteEntity());
-            var userBotStateAccessors = _botState.CreateProperty<UsuarioEntity>("userBot");
-            var userbot = await userBotStateAccessors.GetAsync(stepContext.Context, () => new UsuarioEntity());
-            var tokenBotAccessors = _botState.CreateProperty<TokenEntity>(nameof(TokenEntity));
-            var tokenBotUTN = await tokenBotAccessors.GetAsync(stepContext.Context, () => new TokenEntity());
-            ClienteVerificado clienteVerificado = await _dataservices.ClienteRepositori.Auth(correo);
-            TokenEntity tokenUser = new TokenEntity();
-            if (clienteVerificado.cliente!=null)
+            try
             {
-                tokenUser.token = clienteVerificado.newToken;
-                userProfile.correo = clienteVerificado.cliente.correo;
-                userProfile.Id = clienteVerificado.cliente.Id;
-                userProfile.nombre = clienteVerificado.cliente.nombre;
-                userProfile.conectedAt = clienteVerificado.cliente.conectedAt;
-                userProfile.rol = clienteVerificado.cliente.rol;
-                var interaction = new InteractionEntity
+                string correo = stepContext.Context.Activity.Text?.Trim();
+                userData = await _dataservices.ClienteRepositori.Auth(correo);
+                var userStateData = await _userState.GetAsync(stepContext.Context, () => new AuthStateModel());
+                if (userData.token != null)
                 {
-                    usuario_created = userbot.id,
-                    usuario_interacted = userProfile.Id
-                };
-                ChatEntity chat = await _dataservices.ChatRepositori.Interaction(interaction, tokenBotUTN.token);
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Hola {userProfile.nombre} es un gusto tenerte aqui! y este es us chat {chat.chat}"), cancellationToken);
-                return await stepContext.BeginDialogAsync(WATER_fULL_STEP_CONSULTA, null, cancellationToken);
+                    userStateData.IsAutenticate = true;
+                   // var chat = await getChat(userData.cliente, MainDialog._bot.bot);
+                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Buenas! {userData.cliente.nombre} 😀. Un placer darte la bienvenida"), cancellationToken);
+                }
+                else
+                {
+                    userData.cliente = new ClienteEntity();
+                    userData.cliente.correo = correo;   
+                }
+            }
+            catch (Exception e)
+            {
+                await stepContext.Context.SendActivityAsync(e.Message.ToString(), cancellationToken: cancellationToken);
+            }
+            return await stepContext.NextAsync(cancellationToken: cancellationToken);
+
+        }
+
+
+
+        private async Task<DialogTurnResult> SolicitarNombre(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            var userStateData = await _userState.GetAsync(stepContext.Context, () => new AuthStateModel());
+            if (userStateData.IsAutenticate)
+            {
+                return await stepContext.NextAsync(cancellationToken: cancellationToken);
             }
             else
             {
-                userProfile.correo = correo;
-                return await stepContext.BeginDialogAsync(WATER_fULL_STEP_REGISTER, null, cancellationToken);
+                var promptOptions = new PromptOptions
+                {
+                    Prompt = MessageFactory.Text("Ahora igrese su nombre", "soicitar nombre", InputHints.ExpectingInput),
+                };
+
+                return await stepContext.PromptAsync("texto", promptOptions, cancellationToken);
             }
 
         }
+
+        private async Task<DialogTurnResult> RegistrarCliente(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            var userStateData = await _userState.GetAsync(stepContext.Context, () => new AuthStateModel());
+            if (!userStateData.IsAutenticate)
+            {           
+                userData.cliente.nombre = stepContext.Context.Activity.Text?.Trim();
+                var respuesta = await _dataservices.ClienteRepositori.NewUser(userData.cliente, LibraryBot<MainDialog>._bot.token);
+                if (respuesta.exito)
+                {
+                    ClienteEntity cliente = ClienteEntity.fromJson(respuesta.data.ToString());
+                    var resultado = await _dataservices.ClienteRepositori.Auth(cliente.correo);
+
+                    if (resultado != null)
+                    {
+                        userStateData.IsAutenticate = true;
+                       // var chat = await getChat(resultado.cliente, MainDialog._bot.bot);
+                        await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Ok {cliente.nombre} Empecemos!!"), cancellationToken);
+                    }
+                }
+                else
+                {
+                    await stepContext.Context.SendActivityAsync(MessageFactory.Text("Lo siento no se ha podido iniciar esta conversacion 😢"), cancellationToken);
+                }
+            }
+            return await stepContext.NextAsync(cancellationToken: cancellationToken);
+
+        }
+
+      
+
+        private async Task<DialogTurnResult> FinalAuth(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            await Task.Delay(1000);
+            await stepContext.Context.SendActivityAsync("¿En qué puedo ayudarte?", cancellationToken: cancellationToken);
+            //return await MenuOptions.ToShow(stepContext, cancellationToken);
+           return await stepContext.ContinueDialogAsync(cancellationToken: cancellationToken);
+        }
+
+
 
         private Task<bool> EmailValidator(PromptValidatorContext<string> promptContext, CancellationToken cancellationToken)
         {
@@ -225,5 +172,15 @@ namespace LibraryBotUtn.Dialogs.Authenticate
                 return false;
             }
         }
+        private async Task<ChatEntity> getChat(ClienteEntity cliente, BotEntity bot)
+        {
+            var interaction = new InteractionEntity
+            {
+                usuario_created = bot.id,
+                usuario_interacted = cliente.Id
+            };
+            return await _dataservices.ChatRepositori.Interaction(interaction, userData.token);
+        }
+
     }
 }

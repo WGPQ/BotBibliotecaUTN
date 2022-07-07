@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LibraryBotUtn.Common.Models
 {
-    public class UsuarioEntity
+    public class BotEntity
     {
         // [Column("id")]
         public string id { get; set; }
@@ -19,7 +19,7 @@ namespace LibraryBotUtn.Common.Models
 
         public string rol { get; set; }
 
-        public static UsuarioEntity fromJson(string json) => JsonConvert.DeserializeObject<UsuarioEntity>(json);
+        public static BotEntity fromJson(string json) => JsonConvert.DeserializeObject<BotEntity>(json);
 
     }
 

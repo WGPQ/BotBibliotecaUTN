@@ -52,38 +52,36 @@ namespace LibraryBotUtn.Services.BotConfig.Repositories
             return clienteVerificado;
         }
 
-        public async Task<ClienteEntity> GetUser(TokenEntity entity)
-        {
 
-            var url = $"{baseUrl}/login/verificar/token/cliente";
-            var cliente = new ClienteEntity();
-            try
+        public async Task<ResultadoEntity> NewUser(ClienteEntity cliente, string token)
+        {
+            var url = $"{baseUrl}/cliente/Insertar";
+            var result = new ResultadoEntity();
+
+            if (cliente != null)
             {
-                var emailRequest = new AuthRequest();
+
+                cliente.rol = "5";
+
                 using (var client = new HttpClient())
                 {
+                    StringContent content = new StringContent(JsonConvert.SerializeObject(cliente), Encoding.UTF8, "application/json");
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {entity.token}");
-                    var resp = await client.GetAsync(url);
+                    var resp = await client.PostAsync(url, content);
 
                     if (resp.IsSuccessStatusCode)
                     {
                         var apiResponse = resp.Content.ReadAsStringAsync().Result;
 
-                        ResultadoEntity result = ResultadoEntity.fromJson(apiResponse);
-                        cliente = ClienteEntity.fromJson(result.data.ToString());
+                        result = JsonConvert.DeserializeObject<ResultadoEntity>(apiResponse);
 
                     }
                 }
             }
-            catch (Exception ex)
-            {
 
-                Console.WriteLine(ex.Message);
-            }
-            return cliente;
+
+            return result;
         }
-
-       
     }
 }

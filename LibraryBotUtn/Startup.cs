@@ -1,8 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-//
-// Generated with Bot Builder V4 SDK Template for Visual Studio EmptyBot v4.15.0
-
+﻿
 using LibraryBotUtn.Dialogs;
 using LibraryBotUtn.RecursosBot.Services;
 using LibraryBotUtn.Services.BotConfig;
@@ -55,6 +51,7 @@ namespace LibraryBotUtn
 
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
             services.AddTransient<IBot, LibraryBot<MainDialog>>();
+
             services.AddCors(c =>
             {
                 c.AddPolicy("AllowOrigin", options => options.AllowAnyOrigin());
