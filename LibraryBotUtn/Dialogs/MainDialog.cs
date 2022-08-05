@@ -100,14 +100,21 @@ namespace LibraryBotUtn.Dialogs
 
         private async Task<DialogTurnResult> ManageIntentions(WaterfallStepContext stepContext, RecognizerResult luisResult, CancellationToken cancellationToken)
         {
+            string frace = "";
             var userStateData = await _userState.GetAsync(stepContext.Context, () => new AuthStateModel());
 
             if (!userStateData.IsAutenticate)
             {
                 return await stepContext.BeginDialogAsync(nameof(AuthUserDialog), null, cancellationToken);
             }
-
             var topIntent = luisResult.GetTopScoringIntent();
+            var token = LibraryBot<MainDialog>._bot.token;
+            var fraceEntity= await _dataservices.FracesRepositori.Frace(topIntent.intent,token);
+            if (fraceEntity.frace != null)
+            {
+                 frace = fraceEntity.frace.Replace("#user", AuthUserDialog.userData.cliente.nombre);
+            }
+
             switch (topIntent.intent)
             {
                 case "Iniciar":
@@ -119,9 +126,9 @@ namespace LibraryBotUtn.Dialogs
                     await IntentAcerca(stepContext, luisResult, cancellationToken);
                     break;
                 case "Saludar":
-                    await IntentSaludar(stepContext, luisResult, cancellationToken);
+                    await IntentSaludar(stepContext, luisResult,frace, cancellationToken);
                     break;
-                case "Opciones":
+                case "Menu":
                     await IntentOpciones(stepContext, luisResult, cancellationToken);
                     break;
                 case "Repositorio":
@@ -133,7 +140,10 @@ namespace LibraryBotUtn.Dialogs
                 case "Calificar":
                     return await IntentCalificar(stepContext, luisResult, cancellationToken);
                 case "Despedirse":
-                    await IntentDespedirse(stepContext, luisResult, cancellationToken);
+                    await IntentDespedirse(stepContext, luisResult, frace, cancellationToken);
+                    break; 
+                case "Ayuda":
+                    await IntentAyuda(stepContext, luisResult, frace, cancellationToken);
                     break;
                 case "None":
                     await IntentNone(stepContext, luisResult, cancellationToken);
@@ -145,14 +155,23 @@ namespace LibraryBotUtn.Dialogs
             return await stepContext.NextAsync(null, cancellationToken);
         }
 
+        private async Task IntentAyuda(WaterfallStepContext stepContext, RecognizerResult luisResult, string frace, CancellationToken cancellationToken)
+        {
+            await stepContext.Context.SendActivityAsync(frace, cancellationToken: cancellationToken);
+        }
+
         private async Task IntentRepositorio(WaterfallStepContext stepContext, RecognizerResult luisResult, CancellationToken cancellationToken)
         {
             await stepContext.Context.SendActivityAsync("Este es nuestro catalogo", cancellationToken: cancellationToken);
-
+            var resp = await _dataservices.SemilleroRepositori.GetCollections();
+            await CardCatalogos.ToShowCatalogo(resp,stepContext,cancellationToken);
         }
 
         private async Task IntentOpciones(WaterfallStepContext stepContext, RecognizerResult luisResult, CancellationToken cancellationToken)
         {
+            IMessageActivity message = Activity.CreateMessageActivity();
+
+            await stepContext.Context.SendActivityAsync(message, cancellationToken);
             await stepContext.Context.SendActivityAsync($"Aquí tengo mis opciones", cancellationToken: cancellationToken);
             await MenuOptions.ToShow(stepContext, cancellationToken);
             //await stepContext.Context.SendActivityAsync("Este es nuestro menú.", cancellationToken: cancellationToken);
@@ -165,9 +184,9 @@ namespace LibraryBotUtn.Dialogs
 
         }
 
-        private async Task IntentDespedirse(WaterfallStepContext stepContext, RecognizerResult luisResult, CancellationToken cancellationToken)
+        private async Task IntentDespedirse(WaterfallStepContext stepContext, RecognizerResult luisResult,string frace, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync("Espero verte pronto", cancellationToken: cancellationToken);
+            await stepContext.Context.SendActivityAsync(frace, cancellationToken: cancellationToken);
 
         }
 
@@ -193,9 +212,9 @@ namespace LibraryBotUtn.Dialogs
 
         }
 
-        private async Task IntentSaludar(WaterfallStepContext stepContext, RecognizerResult luisResult, CancellationToken cancellationToken)
+        private async Task IntentSaludar(WaterfallStepContext stepContext, RecognizerResult luisResult,string frace, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync("Hola, que gusto verte.", cancellationToken: cancellationToken);
+            await stepContext.Context.SendActivityAsync(frace, cancellationToken: cancellationToken);
 
         }
 

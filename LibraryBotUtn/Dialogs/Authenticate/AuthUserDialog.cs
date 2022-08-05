@@ -76,8 +76,11 @@ namespace LibraryBotUtn.Dialogs.Authenticate
                 if (userData.token != null)
                 {
                     userStateData.IsAutenticate = true;
-                   // var chat = await getChat(userData.cliente, MainDialog._bot.bot);
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Buenas! {userData.cliente.nombre} 😀. Un placer darte la bienvenida"), cancellationToken);
+                    // var chat = await getChat(userData.cliente, MainDialog._bot.bot);
+                    var token = LibraryBot<MainDialog>._bot.token;
+                    var fraceEntity = await _dataservices.FracesRepositori.Frace("Bienvenida", token);
+                    string wecome = fraceEntity.frace.Replace("#user", userData.cliente.nombre);
+                    await stepContext.Context.SendActivityAsync(MessageFactory.Text(wecome), cancellationToken);
                 }
                 else
                 {

@@ -55,14 +55,14 @@ namespace LibraryBotUtn.Dialogs
                         var botStateData = await _botState.GetAsync(turnContext, () => new AuthStateModel());
                     }
 
-                    var fraceEntity = await _dataservices.FracesRepositori.Frace("Bienvenida", _bot.token);
+                    var fraceEntity = await _dataservices.FracesRepositori.Frace("Introduccion", _bot.token);
                     if (fraceEntity != null)
                     {
 
                         await OnBoarding.ToShow(fraceEntity.frace, turnContext, cancellationToken);
                     }
 
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Bienvenido"), cancellationToken);
+                  //  await turnContext.SendActivityAsync(MessageFactory.Text($"Bienvenido"), cancellationToken);
 
                    // await _dialog.RunAsync(turnContext, _conversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
                 }
@@ -84,6 +84,7 @@ namespace LibraryBotUtn.Dialogs
             var key = $"{turnContext.Activity.ChannelId}/conversations/{turnContext.Activity.Conversation?.Id}";
 
             var clientStateData = await _clientState.GetAsync(turnContext, () => new AuthStateModel());
+
 
             if (clientStateData.IsAutenticate)
             {

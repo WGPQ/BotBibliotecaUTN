@@ -37,8 +37,12 @@ namespace LibraryBotUtn.Services.BotConfig.Repositories
                     var apiResponse = resp.Content.ReadAsStringAsync().Result;
 
                     var result = ResultadoEntity.fromJson(apiResponse);
+                    if (result.exito)
+                    {
+                        frace = FracesEntiti.fromJson(result.data.ToString());
+                    }
 
-                    frace = FracesEntiti.fromJson(result.data.ToString());
+                 
 
                 }
             }

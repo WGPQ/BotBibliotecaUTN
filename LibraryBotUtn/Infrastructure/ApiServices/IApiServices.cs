@@ -17,7 +17,7 @@ namespace LibraryBotUtn.Services.BotConfig
     public interface IAutentication<R, U> where U : new()
     {
         Task<R> Auth(string email);
-    
+
     }
     public interface IAutenticationRepositori : IAutentication<BotVerificadoEntity, BotEntity> { }
     public interface IChat<T> where T : new()
@@ -26,7 +26,7 @@ namespace LibraryBotUtn.Services.BotConfig
     }
     public interface IChatRepositori : IChat<ChatEntity> { }
 
-    public interface ICliente<T, C,R> where T : new()
+    public interface ICliente<T, C, R> where T : new()
     {
         Task<C> Auth(string email);
         Task<R> NewUser(ClienteEntity cliente, string token);
@@ -40,5 +40,11 @@ namespace LibraryBotUtn.Services.BotConfig
         Task<bool> SaveAsync(string key, JObject content, string etag);
     }
     public interface IStoreRepositori : IStore { }
+    public interface ISemillero<T> where T : new()
+    {
+        Task<List<T>> GetCollections();
+
+    }
+    public interface ISemilleroRepositori : ISemillero<SetsModels> { }
 
 }

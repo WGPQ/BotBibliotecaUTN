@@ -12,5 +12,6 @@ namespace LibraryBotUtn.Services.BotConfig
         IChatRepositori ChatRepositori { get; }
         IClienteRepositori ClienteRepositori { get; }
         IStoreRepositori StoreRepositori { get; }
+        ISemilleroRepositori SemilleroRepositori { get; }
     }
 }

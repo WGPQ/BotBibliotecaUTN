@@ -20,6 +20,7 @@ namespace LibraryBotUtn.Common.Cards
         }
         private static Activity CreateCarousel()
         {
+
             var cardCitasMedicas = new HeroCard
             {
                 Title = "Repositorio",

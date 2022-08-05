@@ -27,9 +27,9 @@ namespace LibraryBotUtn.Common.Cards
                 Images = new List<CardImage> { new CardImage("https://i.ytimg.com/vi/ucj5hAICSUE/maxresdefault.jpg") },
                 Buttons = new List<CardAction>
               {
-                  new CardAction(ActionTypes.ImBack, title: "1. Iniciar", value: "Iniciar"),
-                  new CardAction(ActionTypes.ImBack, title: "2. Términos y condiciones", value: "Terminos"),
-                  new CardAction(ActionTypes.ImBack, title: "3. Acerca del bot", value: "Acerca"),
+                  new CardAction(){ Title="Facebook",Value="https://www.facebook.com/utnbiblioteca",Type= ActionTypes.OpenUrl},
+                  new CardAction(){ Title="Youtube",Value="https://www.youtube.com/channel/UCLVtk5s9uj9FcTwOdGQYseA",Type= ActionTypes.OpenUrl},
+                  new CardAction(){ Title="Sitio Web",Value="https://biblioteca.utn.edu.ec",Type= ActionTypes.OpenUrl},
               },
             };
             return card;

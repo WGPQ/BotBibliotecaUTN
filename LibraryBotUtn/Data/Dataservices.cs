@@ -1,4 +1,5 @@
 ﻿using LibraryBotUtn.Common.Models;
+using LibraryBotUtn.Infrastructure.ApiServices.Repositories;
 using LibraryBotUtn.Services.BotConfig;
 using LibraryBotUtn.Services.BotConfig.Repositories;
 using Newtonsoft.Json;
@@ -18,8 +19,9 @@ namespace LibraryBotUtn.RecursosBot.Services
     public class Dataservices:IDataservices
     {
         private readonly string baseUrl = "https://bibliochatservice02.azurewebsites.net/api";
+        private readonly string baseUrlSemillero = "http://repositorio.utn.edu.ec:8080/oai/";
 
-        //private readonly string baseUrl = "https://localhost:44399/api";
+        // private readonly string baseUrl = "http://localhost:9095/api";
         public IFracesRepositori FracesRepositori => new FracesRepository(baseUrl);
 
         public IAutenticationRepositori AuthRepositori =>  new AuthRepository(baseUrl);
@@ -29,6 +31,8 @@ namespace LibraryBotUtn.RecursosBot.Services
         public IClienteRepositori ClienteRepositori => new ClienteRepository(baseUrl);
 
         public IStoreRepositori StoreRepositori => new StoreRepository(baseUrl);
+
+        public ISemilleroRepositori SemilleroRepositori => new SemilleroRepository(baseUrlSemillero);
         ////static string url = "http://localhost:38906/api/frace/Listar";
 
         ////public Dataservices()
