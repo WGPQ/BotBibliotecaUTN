@@ -17,9 +17,10 @@ namespace LibraryBotUtn.Services.BotConfig
     public interface IAutentication<R, U> where U : new()
     {
         Task<R> Auth(string email);
+        Task<U> VerificationToken(string token);
 
     }
-    public interface IAutenticationRepositori : IAutentication<BotVerificadoEntity, BotEntity> { }
+    public interface IAutenticationRepositori : IAutentication<LoginResponse, UserVerificadoEntity> { }
     public interface IChat<T> where T : new()
     {
         Task<T> Interaction(InteractionEntity interaction, string token);
@@ -29,7 +30,7 @@ namespace LibraryBotUtn.Services.BotConfig
     public interface ICliente<T, C, R> where T : new()
     {
         Task<C> Auth(string email);
-        Task<R> NewUser(ClienteEntity cliente, string token);
+        Task<R> NewUser(UsuarioEntity cliente, string token);
 
     }
     public interface IClienteRepositori : ICliente<ClienteEntity, ClienteVerificado, ResultadoEntity> { }

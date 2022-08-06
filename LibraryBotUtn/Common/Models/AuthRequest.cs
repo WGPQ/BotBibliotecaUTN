@@ -8,5 +8,7 @@ namespace LibraryBotUtn.Common.Models
     public class AuthRequest
     {
         public string correo { get; set; }
+        public string clave { get; set; }
+
     }
 }

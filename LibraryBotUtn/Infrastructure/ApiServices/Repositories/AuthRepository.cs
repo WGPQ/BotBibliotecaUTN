@@ -20,16 +20,16 @@ namespace LibraryBotUtn.Services.BotConfig.Repositories
         }
 
 
-        public async Task<BotVerificadoEntity> Auth(string email)
+        public async Task<LoginResponse> Auth(string email)
         {
 
 
-            var url = $"{baseUrl}/login/auth/chatbot";
+            var url = $"{baseUrl}/auth/login/chatbot";
 
 
-            ResultadoEntity result = new ResultadoEntity();
+            LoginResponse result = new LoginResponse();
             var emailRequest = new AuthRequest();
-            var bot = new BotVerificadoEntity();
+            var bot = new UserVerificadoEntity();
             emailRequest.correo = email;
             using (var client = new HttpClient())
             {
@@ -42,18 +42,46 @@ namespace LibraryBotUtn.Services.BotConfig.Repositories
                 {
                     var apiResponse = resp.Content.ReadAsStringAsync().Result;
 
-                    result = JsonConvert.DeserializeObject<ResultadoEntity>(apiResponse);
-                    if (result.data != null)
-                    {
-                        bot = BotVerificadoEntity.fromJson(result.data.ToString());
-                    }
+                    result = JsonConvert.DeserializeObject<LoginResponse>(apiResponse);
 
                 }
             }
 
-            return bot;
+            return result;
         }
 
+        public async Task<UserVerificadoEntity> VerificationToken(string token)
+        {
+            var url = $"{baseUrl}/auth/verificar/token";
 
+            UserVerificadoEntity userVerificado = new UserVerificadoEntity();
+            ResultadoEntity result = new ResultadoEntity();
+
+            using (var client = new HttpClient())
+            {
+
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+                var resp = await client.GetAsync(url);
+
+                if (resp.IsSuccessStatusCode)
+                {
+                    var apiResponse = resp.Content.ReadAsStringAsync().Result;
+
+                     result = ResultadoEntity.fromJson(apiResponse);
+
+                    if (result.exito)
+                    {
+                        userVerificado = UserVerificadoEntity.fromJson(result.data.ToString());
+                    }
+                    
+
+
+
+                }
+            }
+
+            return userVerificado;
+        }
     }
 }

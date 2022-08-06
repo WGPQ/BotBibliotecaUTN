@@ -27,7 +27,7 @@ namespace LibraryBotUtn.Dialogs
         private static string INITIAL_WATERFALL = "INITIAL_WATERFALL_STEPS";
         public static string keyBot = "userBot";
         public static string keyClient = "userClient";
-        public static BotVerificadoEntity _bot = new BotVerificadoEntity();
+        public static UserVerificadoEntity _bot = new UserVerificadoEntity();
         private readonly IStatePropertyAccessor<AuthStateModel> _botState;
         private readonly IStatePropertyAccessor<AuthStateModel> _userState;
 
@@ -68,11 +68,11 @@ namespace LibraryBotUtn.Dialogs
 
         private async Task<DialogTurnResult> IntroStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            _bot = await _dataservices.AuthRepositori.Auth("bibliochatutn@outlook.com");
-            if (_bot.token != null)
-            {
-                var botStateData = await _botState.GetAsync(stepContext.Context, () => new AuthStateModel());
-            }
+            //_bot = await _dataservices.AuthRepositori.Auth("bibliochatutn@outlook.com");
+            //if (_bot.token != null)
+            //{
+            //    var botStateData = await _botState.GetAsync(stepContext.Context, () => new AuthStateModel());
+            //}
 
             var fraceEntity = await _dataservices.FracesRepositori.Frace("Bienvenida", _bot.token);
             if (fraceEntity != null)
@@ -112,7 +112,7 @@ namespace LibraryBotUtn.Dialogs
             var fraceEntity= await _dataservices.FracesRepositori.Frace(topIntent.intent,token);
             if (fraceEntity.frace != null)
             {
-                 frace = fraceEntity.frace.Replace("#user", AuthUserDialog.userData.cliente.nombre);
+                 frace = fraceEntity.frace.Replace("#user", AuthUserDialog.userData.usuario.nombre_completo);
             }
 
             switch (topIntent.intent)

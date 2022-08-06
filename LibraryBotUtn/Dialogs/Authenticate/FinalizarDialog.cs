@@ -28,7 +28,7 @@ namespace LibraryBotUtn.Dialogs.Authenticate
 
         private async Task<DialogTurnResult> ToShowOptions(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync($"{AuthUserDialog.userData.cliente.nombre} ya tienes una convresacion inicada 😅.", cancellationToken: cancellationToken);
+            await stepContext.Context.SendActivityAsync($"{AuthUserDialog.userData.usuario.nombre_completo} ya tienes una convresacion inicada 😅.", cancellationToken: cancellationToken);
             return await stepContext.PromptAsync(
 
               nameof(TextPrompt),
@@ -45,7 +45,7 @@ namespace LibraryBotUtn.Dialogs.Authenticate
             if (userOption== "no")
             {
                 userStateData.IsAutenticate = false;
-                await stepContext.Context.SendActivityAsync($"Ok {AuthUserDialog.userData.cliente.nombre} 👋 espero verte pronto. {Environment.NewLine} Cuidate!! ", cancellationToken: cancellationToken);
+                await stepContext.Context.SendActivityAsync($"Ok {AuthUserDialog.userData.usuario.nombre_completo} 👋 espero verte pronto. {Environment.NewLine} Cuidate!! ", cancellationToken: cancellationToken);
             }
             else if (userOption == "si")
             {

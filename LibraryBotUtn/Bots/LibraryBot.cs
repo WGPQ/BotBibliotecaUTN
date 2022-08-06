@@ -28,7 +28,7 @@ namespace LibraryBotUtn.Dialogs
         public static string keyClient = "userClient";
         private readonly IStatePropertyAccessor<AuthStateModel> _clientState;
         public static string keyBot = "userBot";
-        public static BotVerificadoEntity _bot = new BotVerificadoEntity();
+        public static UserVerificadoEntity _bot = new UserVerificadoEntity();
         public readonly IStatePropertyAccessor<AuthStateModel> _botState;
 
         public LibraryBot(ConversationState conversationState, UserState userState, UserState botState, UserState clientState, T dialog, IDataservices dataservices, Microsoft.BotBuilderSamples.IStore store)
@@ -49,9 +49,11 @@ namespace LibraryBotUtn.Dialogs
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
-                    _bot = await _dataservices.AuthRepositori.Auth("bibliochatutn@outlook.com");
-                    if (_bot.token != null)
+                    LoginResponse resp = await _dataservices.AuthRepositori.Auth("bibliochatutn@outlook.com");
+                    //_bot
+                    if (resp.exito)
                     {
+                        _bot = await _dataservices.AuthRepositori.VerificationToken(resp.token);
                         var botStateData = await _botState.GetAsync(turnContext, () => new AuthStateModel());
                     }
 

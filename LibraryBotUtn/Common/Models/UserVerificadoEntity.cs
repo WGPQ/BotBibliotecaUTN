@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace LibraryBotUtn.Common.Models
 {
-    public class BotVerificadoEntity
+    public class UserVerificadoEntity
     {
         public string token { get; set; }
-        public BotEntity bot { get; set; }
-        public static BotVerificadoEntity fromJson(string json) => JsonConvert.DeserializeObject<BotVerificadoEntity>(json);
+        public UsuarioEntity usuario { get; set; }
+        public static UserVerificadoEntity fromJson(string json) => JsonConvert.DeserializeObject<UserVerificadoEntity>(json);
 
     }
 }

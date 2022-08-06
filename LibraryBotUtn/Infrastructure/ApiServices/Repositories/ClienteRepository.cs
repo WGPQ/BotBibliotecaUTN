@@ -1,4 +1,5 @@
-﻿using LibraryBotUtn.Common.Models;
+﻿using LibraryBotUtn.Common.Helpers;
+using LibraryBotUtn.Common.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -53,15 +54,15 @@ namespace LibraryBotUtn.Services.BotConfig.Repositories
         }
 
 
-        public async Task<ResultadoEntity> NewUser(ClienteEntity cliente, string token)
+        public async Task<ResultadoEntity> NewUser(UsuarioEntity cliente, string token)
         {
-            var url = $"{baseUrl}/cliente/Insertar";
+            var url = $"{baseUrl}/usuario/Insertar";
             var result = new ResultadoEntity();
 
             if (cliente != null)
             {
 
-                cliente.rol = "5";
+                cliente.rol = Encript64.EncryptString("4");
 
                 using (var client = new HttpClient())
                 {
